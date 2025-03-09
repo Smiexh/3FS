@@ -56,10 +56,4 @@ WORKDIR /3fs
 RUN git submodule update --init --recursive
 RUN ./patches/apply.sh
 
-RUN cargo build --release && \
-    cmake -S . -B build \
-    -DCMAKE_CXX_COMPILER=clang++-14 \
-    -DCMAKE_C_COMPILER=clang-14 \
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&\
-    cmake --build build -j 8
+RUN cargo build --release
