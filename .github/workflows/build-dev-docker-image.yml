@@ -3,13 +3,9 @@ name: Build development Docker image
 on:
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-dev
-
 jobs:
-  push_to_registry:
-    runs-on: ubuntu-latest
+  build_dev_image:
+    runs-on: ubuntu-22.04
 
     permissions:
       packages: write
@@ -21,32 +17,31 @@ jobs:
     - name: Check out the repository
       uses: actions/checkout@v4
 
-    - name: Log in to the Container registry
-      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Image
+      run: |
+        docker build --force-rm -t 3fs-builder -f dockerfile/dev.dockerfile .
 
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    - name: Save Image
+      run: |
+        docker save -o 3fs-builder.tar 3fs-builder:latest
 
-    - name: Build and push Docker image
-      id: push
-      uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        context: .
-        file: ./dockerfile/dev.dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tag_name: ${{github.sha}}
+        release_name: 3fs-builder-image
+        draft: false
+        prerelease: false
 
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v2
+    - name: Upload Docker image to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-        subject-digest: ${{ steps.push.outputs.digest }}
-        push-to-registry: true
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./3fs-builder.tar
+        asset_name: 3fs-builder.tar
+        asset_content_type: application/x-tar

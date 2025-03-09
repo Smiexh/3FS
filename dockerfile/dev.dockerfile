@@ -24,7 +24,7 @@ RUN apt-get update                                    &&\
   apt-get clean                                       &&\
   rm -rf /var/lib/apt/lists/*
 
-  ARG TARGETARCH
+  ARG TARGETARCH="amd64"
   ARG FDB_VERSION=7.3.63
   ARG FDB_ARCH_SUFFIX
   RUN case "${TARGETARCH}" in \
@@ -49,3 +49,17 @@ RUN wget -O- ${LIBFUSE_DOWNLOAD_URL}        |\
   meson setup .. && meson configure -D default_library=both &&\
   ninja && ninja install &&\
   rm -f -r /tmp/fuse-${LIBFUSE_VERSION}*
+
+RUN git clone https://github.com/deepseek-ai/3fs
+WORKDIR /3fs
+
+RUN git submodule update --init --recursive
+RUN ./patches/apply.sh
+
+RUN cargo build --release && \
+    cmake -S . -B build \
+    -DCMAKE_CXX_COMPILER=clang++-14 \
+    -DCMAKE_C_COMPILER=clang-14 \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON &&\
+    cmake --build build -j 8
