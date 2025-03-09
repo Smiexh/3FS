@@ -3,10 +3,11 @@ name: Build
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: self-hosted  # or `ubuntu-22.04`
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v4
@@ -34,3 +35,16 @@ jobs:
         cargo build --release
         cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++-14 -DCMAKE_C_COMPILER=clang-14 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         cmake --build build -j 32
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: 3fs-binaries
+        path: |
+          build/bin/monitor_collector_main
+          build/bin/admin_cli
+          build/bin/mgmtd_main
+          build/bin/meta_main
+          build/bin/storage_main
+          build/bin/hf3fs_fuse_main
+          build/compile_commands.json
