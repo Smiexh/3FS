@@ -50,10 +50,3 @@ RUN wget -O- ${LIBFUSE_DOWNLOAD_URL}        |\
   ninja && ninja install &&\
   rm -f -r /tmp/fuse-${LIBFUSE_VERSION}*
 
-RUN git clone https://github.com/deepseek-ai/3fs
-WORKDIR /3fs
-
-RUN git submodule update --init --recursive
-RUN ./patches/apply.sh
-
-RUN cargo build --release
