@@ -35,19 +35,14 @@ jobs:
         cargo build --release
         cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++-14 -DCMAKE_C_COMPILER=clang-14 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         cmake --build build -j 8
+        ls -R build/bin
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 3fs-binaries
         path: |
-          build/bin/monitor_collector_main
-          build/bin/admin_cli
-          build/bin/mgmtd_main
-          build/bin/meta_main
-          build/bin/storage_main
-          build/bin/hf3fs_fuse_main
-          build/compile_commands.json
+          build/bin/
   
   release:
     runs-on: ubuntu-22.04
@@ -78,16 +73,16 @@ jobs:
         draft: false
         prerelease: false
     
-    - name: Packagke artifacts
+    - name: Package artifacts
       run: |
-        tar -cvf 3fs-binaries.tar 3fs-binaries
+        tar -zcvf 3fs-binaries.tar.gz 3fs-binaries
 
-    - name: Upload Docker image to Release
+    - name: Upload to Release
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./3fs-binaries.tar
-        asset_name: 3fs-binaries.tar
-        asset_content_type: application/x-tar
+        asset_path: ./3fs-binaries.tar.gz
+        asset_name: 3fs-binaries.tar.gz
+        asset_content_type: application/gzip
